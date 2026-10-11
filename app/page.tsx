@@ -41,7 +41,7 @@ type DashboardData = {
   };
 };
 
-type Period = "currentYear" | "last365" | "all" | `year:${number}`;
+type Period = "currentYear" | "last365" | "all";
 
 const number = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 });
 const adaFormat = new Intl.NumberFormat("de-DE", {
@@ -255,8 +255,7 @@ export default function Home() {
     const belongsToPeriod = (reward: Reward) => {
       if (period === "all") return true;
       if (period === "last365") return reward.timestamp >= Math.floor(now / 1000) - 365 * 86_400;
-      const selectedYear = period === "currentYear" ? currentYear : Number(period.split(":")[1]);
-      return epochYear(reward.timestamp) === selectedYear;
+      return epochYear(reward.timestamp) === currentYear;
     };
 
     // Blockfrost already reports the next epoch's concrete reward. Include it even
@@ -295,14 +294,11 @@ export default function Home() {
   const timeLeft = nextRewardTimestamp === null
     ? null
     : formatCountdown(Math.floor(nextRewardTimestamp - now / 1000));
-  const years = Array.from({ length: Math.max(1, currentYear - 2020 + 1) }, (_, index) => currentYear - index);
   const periodLabel = period === "all"
     ? "Gesamtzeitraum"
     : period === "last365"
       ? "Letzte 365 Tage"
-      : period === "currentYear"
-        ? `Steuerjahr ${currentYear} (bis heute)`
-        : `Steuerjahr ${period.split(":")[1]}`;
+      : `Steuerjahr ${currentYear} (bis heute)`;
 
   async function loadWallet(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -535,7 +531,6 @@ export default function Home() {
                 >
                   <option value="currentYear">Laufendes Steuerjahr {currentYear} (bis heute)</option>
                   <option value="last365">Letzte 365 Tage</option>
-                  {years.filter((year) => year !== currentYear).map((year) => <option key={year} value={`year:${year}`}>Steuerjahr {year}</option>)}
                   <option value="all">Gesamter Zeitraum</option>
                 </select>
                 <button
