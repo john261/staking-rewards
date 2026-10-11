@@ -116,7 +116,12 @@ async function getAllRewards(stakeAddress: string) {
   );
 }
 
-function coingeckoConfig() {
+type CoinGeckoConfig = {
+  base: string;
+  headers: Record<string, string>;
+};
+
+function coingeckoConfig(): CoinGeckoConfig {
   const proKey = process.env.COINGECKO_PRO_API_KEY;
   if (proKey) {
     return {
