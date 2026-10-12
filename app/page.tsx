@@ -108,6 +108,14 @@ function epochYear(timestamp: number) {
   return Number(new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric" }).format(timestamp * 1000));
 }
 
+function getAdaBalanceTier(balanceAda: number) {
+  if (balanceAda >= 10_000_000) return { name: "Whale", emoji: "🐋", range: "ab 10 Mio. ADA" };
+  if (balanceAda >= 1_000_000) return { name: "Shark", emoji: "🦈", range: "1–10 Mio. ADA" };
+  if (balanceAda >= 100_000) return { name: "Dolphin", emoji: "🐬", range: "100.000–1 Mio. ADA" };
+  if (balanceAda >= 10_000) return { name: "Fish", emoji: "🐟", range: "10.000–100.000 ADA" };
+  return { name: "Shrimp", emoji: "🦐", range: "unter 10.000 ADA" };
+}
+
 function csvNumber(value: number | null, fractionDigits: number) {
   if (value === null || !Number.isFinite(value)) return "";
   return value.toFixed(fractionDigits).replace(".", ",");
@@ -115,6 +123,178 @@ function csvNumber(value: number | null, fractionDigits: number) {
 
 function csvCell(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
+}
+
+function xmlEscape(value: string) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+}
+
+function concatBytes(chunks: Uint8Array[]) {
+  const result = new Uint8Array(chunks.reduce((length, chunk) => length + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function zipStore(files: Array<{ name: string; content: string }>) {
+  const encoder = new TextEncoder();
+  const localParts: Uint8Array[] = [];
+  const centralParts: Uint8Array[] = [];
+  let localOffset = 0;
+
+  for (const file of files) {
+    const fileName = encoder.encode(file.name);
+    const content = encoder.encode(file.content);
+    const checksum = crc32(content);
+    const localHeader = new Uint8Array(30 + fileName.length);
+    const localView = new DataView(localHeader.buffer);
+    localView.setUint32(0, 0x04034b50, true);
+    localView.setUint16(4, 20, true);
+    localView.setUint16(6, 0, true);
+    localView.setUint16(8, 0, true);
+    localView.setUint16(10, 0, true);
+    localView.setUint16(12, 0x0021, true);
+    localView.setUint32(14, checksum, true);
+    localView.setUint32(18, content.length, true);
+    localView.setUint32(22, content.length, true);
+    localView.setUint16(26, fileName.length, true);
+    localView.setUint16(28, 0, true);
+    localHeader.set(fileName, 30);
+    localParts.push(localHeader, content);
+
+    const centralHeader = new Uint8Array(46 + fileName.length);
+    const centralView = new DataView(centralHeader.buffer);
+    centralView.setUint32(0, 0x02014b50, true);
+    centralView.setUint16(4, 20, true);
+    centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, 0, true);
+    centralView.setUint16(10, 0, true);
+    centralView.setUint16(12, 0, true);
+    centralView.setUint16(14, 0x0021, true);
+    centralView.setUint32(16, checksum, true);
+    centralView.setUint32(20, content.length, true);
+    centralView.setUint32(24, content.length, true);
+    centralView.setUint16(28, fileName.length, true);
+    centralView.setUint16(30, 0, true);
+    centralView.setUint16(32, 0, true);
+    centralView.setUint16(34, 0, true);
+    centralView.setUint16(36, 0, true);
+    centralView.setUint32(38, 0, true);
+    centralView.setUint32(42, localOffset, true);
+    centralHeader.set(fileName, 46);
+    centralParts.push(centralHeader);
+    localOffset += localHeader.length + content.length;
+  }
+
+  const centralDirectory = concatBytes(centralParts);
+  const endRecord = new Uint8Array(22);
+  const endView = new DataView(endRecord.buffer);
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(4, 0, true);
+  endView.setUint16(6, 0, true);
+  endView.setUint16(8, files.length, true);
+  endView.setUint16(10, files.length, true);
+  endView.setUint32(12, centralDirectory.length, true);
+  endView.setUint32(16, localOffset, true);
+  endView.setUint16(20, 0, true);
+  return concatBytes([...localParts, centralDirectory, endRecord]);
+}
+
+function downloadXlsx(rewards: Reward[], address: string, periodLabel: string, announcedEpoch: number | null) {
+  const sorted = [...rewards].sort((a, b) => a.timestamp - b.timestamp);
+  let cumulative = 0;
+  let cumulativeKnown = true;
+  const headers = [
+    "Reward-Epoche (verdient)",
+    "Auszahlungsepoche (verfügbar)",
+    "Verfügbarkeit ab (UTC; Beginn Auszahlungsepoche, kein Claim-Zeitpunkt)",
+    "Erhaltene Rewards in ADA",
+    "ADA/EUR Kurs",
+    "Zeitpunkt des Kurs-Datenpunkts (UTC)",
+    "Wert in EUR zum Zuflusszeitpunkt",
+    "Laufende Summe (EUR)",
+    "Status",
+  ];
+  const rows: Array<Array<string | number | null>> = [headers];
+  const isoTime = (timestamp: number) => new Date(timestamp * 1000).toISOString().replace("T", " ").replace(".000Z", " UTC").replace("Z", " UTC");
+
+  for (const reward of sorted) {
+    const isAnnounced = reward.epoch === announcedEpoch;
+    if (!isAnnounced) {
+      if (reward.valueEur === null) cumulativeKnown = false;
+      else cumulative += reward.valueEur;
+    }
+    rows.push([
+      reward.earnedEpoch,
+      reward.epoch,
+      isoTime(reward.timestamp),
+      reward.ada,
+      isAnnounced ? null : reward.priceEur,
+      isAnnounced || reward.priceTimestamp === null ? null : isoTime(reward.priceTimestamp),
+      isAnnounced ? null : reward.valueEur,
+      isAnnounced || !cumulativeKnown ? null : cumulative,
+      isAnnounced ? "Blockfrost gemeldet – Ausschüttung steht noch aus" : "Ausgeschüttet",
+    ]);
+  }
+
+  const columnName = (index: number) => {
+    let value = index + 1;
+    let name = "";
+    while (value > 0) {
+      const remainder = (value - 1) % 26;
+      name = String.fromCharCode(65 + remainder) + name;
+      value = Math.floor((value - 1) / 26);
+    }
+    return name;
+  };
+  const sheetRows = rows.map((row, rowIndex) => {
+    const cells = row.map((value, columnIndex) => {
+      if (value === null) return "";
+      const ref = `${columnName(columnIndex)}${rowIndex + 1}`;
+      if (typeof value === "number" && Number.isFinite(value)) {
+        const style = columnIndex === 3 || columnIndex === 4 ? 2 : columnIndex === 6 || columnIndex === 7 ? 3 : 0;
+        return `<c r="${ref}" s="${style}"><v>${value}</v></c>`;
+      }
+      return `<c r="${ref}"${rowIndex === 0 ? ' s="1"' : ""} t="inlineStr"><is><t xml:space="preserve">${xmlEscape(String(value))}</t></is></c>`;
+    }).join("");
+    return `<row r="${rowIndex + 1}"${rowIndex === 0 ? ' ht="34" customHeight="1"' : ""}>${cells}</row>`;
+  }).join("");
+  const lastRow = rows.length;
+  const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:I${lastRow}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="19"/><cols><col min="1" max="1" width="22" customWidth="1"/><col min="2" max="2" width="24" customWidth="1"/><col min="3" max="3" width="48" customWidth="1"/><col min="4" max="5" width="22" customWidth="1"/><col min="6" max="6" width="36" customWidth="1"/><col min="7" max="8" width="26" customWidth="1"/><col min="9" max="9" width="54" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:I${lastRow}"/><pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.000000"/><numFmt numFmtId="165" formatCode="#,##0.00 &quot;€&quot;"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FF18251D"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFB9F574"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files = [
+    { name: "[Content_Types].xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
+    { name: "_rels/.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { name: "xl/workbook.xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Steuer-Export" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    { name: "xl/_rels/workbook.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { name: "xl/styles.xml", content: styles },
+    { name: "xl/worksheets/sheet1.xml", content: worksheet },
+  ];
+  const bytes = zipStore(files);
+  const workbookBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const blob = new Blob([workbookBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeAddress = address.slice(0, 12).replace(/[^a-z0-9]/gi, "");
+  const safePeriod = periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  link.href = url;
+  link.download = `cardano-steuerexport-${safeAddress}-${safePeriod || "gesamt"}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
 function downloadCsv(rewards: Reward[], address: string, periodLabel: string, announcedEpoch: number | null) {
@@ -242,6 +422,7 @@ export default function Home() {
   }, []);
 
   const currentYear = epochYear(Math.floor(now / 1000));
+  const balanceTier = data ? getAdaBalanceTier(data.account.balanceAda) : null;
   const nextKnownReward = useMemo(() => {
     if (!data) return null;
     return data.rewards
@@ -338,6 +519,11 @@ export default function Home() {
     downloadCsv(visibleRewards, data.account.stakeAddress, periodLabel, announcedReward?.epoch ?? null);
   }
 
+  function exportExcel() {
+    if (!data || visibleRewards.length === 0) return;
+    downloadXlsx(visibleRewards, data.account.stakeAddress, periodLabel, announcedReward?.epoch ?? null);
+  }
+
   return (
     <div className="min-h-screen text-[#f2f5fc]">
       <div className="mx-auto flex min-h-screen max-w-[1680px]">
@@ -421,6 +607,16 @@ export default function Home() {
                         <p className="mt-2 text-base text-[#a6b4ca]">
                           {data ? data.currentPriceEur !== null ? currency.format(data.account.balanceAda * data.currentPriceEur) : "ADA/EUR-Kurs gerade nicht verfügbar" : "Warte auf Wallet-Verbindung"}
                         </p>
+                        {balanceTier && (
+                          <span
+                            title={`Spielerische Größenklasse nach ADA-Bestand: ${balanceTier.range}. Keine offizielle Cardano-Kategorie.`}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#526248] bg-[#b9f574]/10 px-2.5 py-1 text-xs font-medium text-[#d8f6b4]"
+                          >
+                            <span aria-hidden="true">{balanceTier.emoji}</span>
+                            {balanceTier.name}
+                            <span className="text-[10px] font-normal text-[#a6b893]">· Fun Fact</span>
+                          </span>
+                        )}
                       </>
                     )}
                   </div>
@@ -533,15 +729,26 @@ export default function Home() {
                   <option value="last365">Letzte 365 Tage</option>
                   <option value="all">Gesamter Zeitraum</option>
                 </select>
-                <button
-                  id="steuerexport"
-                  onClick={exportCsv}
-                  disabled={!data || visibleRewards.length === 0}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#b9f574] px-3.5 text-xs font-semibold text-[#18251d] shadow-[0_4px_18px_rgba(185,245,116,.12)] transition hover:bg-[#caff91] disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <Icon name="download" className="h-4 w-4" />
-                  📊 Steuer-Export (Excel / CSV) herunterladen
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    id="steuerexport"
+                    onClick={exportExcel}
+                    disabled={!data || visibleRewards.length === 0}
+                    title="Excel-Datei mit echten numerischen Zellen; funktioniert auch in LibreOffice und Google Tabellen"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#b9f574] px-3.5 text-xs font-semibold text-[#18251d] shadow-[0_4px_18px_rgba(185,245,116,.12)] transition hover:bg-[#caff91] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <Icon name="download" className="h-4 w-4" />
+                    📊 Steuer-Export Excel (.xlsx)
+                  </button>
+                  <button
+                    onClick={exportCsv}
+                    disabled={!data || visibleRewards.length === 0}
+                    title="CSV-Datei im deutschen Format mit Semikolon und Dezimalkomma"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#465671] bg-[#121b2b] px-3 text-xs font-medium text-[#dbe4f1] transition hover:border-[#7185a3] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    CSV
+                  </button>
+                </div>
               </div>
             </div>
 
