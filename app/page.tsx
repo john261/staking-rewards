@@ -42,6 +42,7 @@ type DashboardData = {
 };
 
 type Period = "currentYear" | "last365" | "all";
+type DashboardTheme = "dark" | "light" | "ocean" | "violet";
 
 const number = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 });
 const adaFormat = new Intl.NumberFormat("de-DE", {
@@ -415,11 +416,28 @@ export default function Home() {
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
   const [copied, setCopied] = useState(false);
+  const [theme, setTheme] = useState<DashboardTheme>("dark");
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("cardano-dashboard-theme");
+    if (savedTheme === "dark" || savedTheme === "light" || savedTheme === "ocean" || savedTheme === "violet") {
+      setTheme(savedTheme);
+      document.documentElement.dataset.theme = savedTheme;
+    } else {
+      document.documentElement.dataset.theme = "dark";
+    }
+  }, []);
+
+  function changeTheme(value: DashboardTheme) {
+    setTheme(value);
+    document.documentElement.dataset.theme = value;
+    window.localStorage.setItem("cardano-dashboard-theme", value);
+  }
 
   const currentYear = epochYear(Math.floor(now / 1000));
   const balanceTier = data ? getAdaBalanceTier(data.account.balanceAda) : null;
@@ -568,6 +586,19 @@ export default function Home() {
               <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Staking Overview</h1>
             </div>
             <div className="flex items-center gap-3">
+              <label className="sr-only" htmlFor="dashboard-theme">Farbschema</label>
+              <select
+                id="dashboard-theme"
+                value={theme}
+                onChange={(event) => changeTheme(event.target.value as DashboardTheme)}
+                title="Farbschema auswählen"
+                className="h-9 max-w-[125px] rounded-lg border border-[#394962] bg-[#192235] px-2 text-xs text-[#c7d2e4] outline-none focus:border-[#b9f574]"
+              >
+                <option value="dark">🌙 Dunkel</option>
+                <option value="light">☀️ Hell</option>
+                <option value="ocean">🌊 Ozean</option>
+                <option value="violet">💜 Violett</option>
+              </select>
               <div className="flex items-center gap-2 rounded-full border border-[#394962] bg-[#192235] px-3 py-1.5 text-xs text-[#c7d2e4]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#b9f574]" /> Cardano {data?.network ?? "Mainnet"}
               </div>
