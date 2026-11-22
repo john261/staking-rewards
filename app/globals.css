@@ -367,11 +367,11 @@ html:not([data-theme]) [class~="border-[#9bd964]/50"],
 html[data-theme="dark"] [class~="border-[#d5ff9e]"],
 html:not([data-theme]) [class~="border-[#d5ff9e]"] { border-color: rgba(101, 182, 255, .55) !important; }
 
-html[data-theme="dark"] [class~="from-[#6a9b47]"],
-html:not([data-theme]) [class~="from-[#6a9b47]"] { --tw-gradient-from: #2468b5 var(--tw-gradient-from-position) !important; }
-
-html[data-theme="dark"] [class~="to-[#b9f574]"],
-html:not([data-theme]) [class~="to-[#b9f574]"] { --tw-gradient-to: #64b5ff var(--tw-gradient-to-position) !important; }
+html[data-theme="dark"] .reward-bar,
+html:not([data-theme]) .reward-bar {
+  background-image: linear-gradient(to top, #2468b5 0%, #64b5ff 100%) !important;
+  border-color: rgba(101, 182, 255, .8) !important;
+}
 
 html[data-theme="dark"] [class~="focus:border-[#b9f574]"]:focus,
 html:not([data-theme]) [class~="focus:border-[#b9f574]"]:focus { border-color: #65b6ff !important; }
