@@ -363,7 +363,7 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <article className={`relative overflow-hidden rounded-xl border p-5 ${accent ? "border-[#9bd964]/50 bg-[#1d2b34]" : "border-[#334158] bg-[#192235]"}`}>
+    <article className={`stat-card relative overflow-hidden rounded-xl border p-5 ${accent ? "border-[#9bd964]/50 bg-[#1d2b34]" : "border-[#334158] bg-[#192235]"}`}>
       <div className="mb-6 flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-[#c4cfe1]">{title}</p>
         <span className={`grid h-9 w-9 place-items-center rounded-lg ${accent ? "bg-[#b9f574]/15 text-[#b9f574]" : "bg-[#26334b] text-[#9eacc3]"}`}>
@@ -543,9 +543,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen text-[#f2f5fc]">
+    <div className="dashboard-shell min-h-screen text-[#f2f5fc]">
       <div className="mx-auto flex min-h-screen max-w-[1680px]">
-        <aside className="hidden w-[226px] shrink-0 border-r border-[#2b3850] bg-[#141d2d]/80 px-4 py-6 lg:flex lg:flex-col">
+        <aside className="dashboard-sidebar hidden w-[226px] shrink-0 border-r border-[#2b3850] bg-[#141d2d]/80 px-4 py-6 lg:flex lg:flex-col">
           <div className="flex items-center gap-3 px-2">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#b9f574] text-[#1c2a23]">
               <span className="text-xl font-black">₳</span>
@@ -577,8 +577,8 @@ export default function Home() {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 pb-12 pt-5 sm:px-6 lg:px-9 lg:pt-7">
-          <header className="mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-[#2b3850] pb-5">
+        <main className="dashboard-main min-w-0 flex-1 px-4 pb-12 pt-5 sm:px-6 lg:px-9 lg:pt-7">
+          <header className="dashboard-header mb-7 flex flex-wrap items-center justify-between gap-4 border-b border-[#2b3850] pb-5">
             <div>
               <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-[.18em] text-[#8f9db4]">
                 <span className="hidden sm:inline">Cardano</span><span className="hidden sm:inline text-[#53627c]">/</span><span>Dashboard</span>
@@ -614,7 +614,7 @@ export default function Home() {
           </header>
 
           <section id="overview" className="mb-6 grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.8fr)]">
-            <article className="soft-grid relative overflow-hidden rounded-xl border border-[#34445e] bg-[#192235] p-5 sm:p-7">
+            <article className="balance-panel soft-grid relative overflow-hidden rounded-xl border border-[#34445e] bg-[#192235] p-5 sm:p-7">
               <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full border border-[#7188a8]/10" />
               <div className="absolute -right-8 -top-16 h-56 w-56 rounded-full border border-[#7188a8]/10" />
               <div className="relative">
@@ -665,7 +665,7 @@ export default function Home() {
                         aria-describedby={error ? "address-error" : undefined}
                         className="min-w-0 flex-1 bg-transparent px-1 py-2 text-xs text-white outline-none placeholder:text-[#738199]"
                       />
-                      <button type="submit" disabled={loading} className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[#b9f574] px-3 py-2 text-xs font-semibold text-[#18251d] transition hover:bg-[#caff91] disabled:opacity-60">
+                      <button type="submit" disabled={loading} className="primary-action inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[#b9f574] px-3 py-2 text-xs font-semibold text-[#18251d] transition hover:bg-[#caff91] disabled:opacity-60">
                         {loading ? "Lädt…" : "Verbinden"}<Icon name="arrow" className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -683,7 +683,7 @@ export default function Home() {
               </div>
             </article>
 
-            <article className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#34445e] bg-[#202c42] p-5 sm:p-6">
+            <article className="next-reward-panel relative flex flex-col justify-between overflow-hidden rounded-xl border border-[#34445e] bg-[#202c42] p-5 sm:p-6">
               <div className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-[#82b5ff]/[.06] blur-2xl" />
               <div className="relative flex items-start justify-between">
                 <div>
@@ -715,7 +715,7 @@ export default function Home() {
             </article>
           </section>
 
-          <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="stats-grid mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard title="ADA-Rewards im Zeitraum" icon="coins" note={data ? `${announcedReward ? `inkl. Blockfrost-gemeldeter Epoche ${announcedReward.epoch} (noch offen)` : "ausgeschüttete Rewards"} · ${periodLabel}` : "Rewards des gewählten Zeitraums"}>
               <p className="text-2xl font-semibold">{data ? `${adaFormat.format(summaryAda)} ADA` : "—"}</p>
               <p className="mt-1 text-xs text-[#91a0b9]">{data ? `ADA inkl. gemeldetem Reward · EUR-Wert der ausgeschütteten Rewards: ${summaryEur === null ? "historische Kursdaten fehlen teilweise" : currency.format(summaryEur)}` : "ADA-Rewards und EUR-Bewertung des Zeitraums"}</p>
@@ -739,7 +739,7 @@ export default function Home() {
             </StatCard>
           </section>
 
-          <section id="rewards" className="overflow-hidden rounded-xl border border-[#334158] bg-[#192235]">
+          <section id="rewards" className="rewards-panel overflow-hidden rounded-xl border border-[#334158] bg-[#192235]">
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#344158] px-4 py-4 sm:px-5">
               <div>
                 <div className="flex items-center gap-2">
@@ -766,7 +766,7 @@ export default function Home() {
                     onClick={exportExcel}
                     disabled={!data || visibleRewards.length === 0}
                     title="Excel-Datei mit echten numerischen Zellen; funktioniert auch in LibreOffice und Google Tabellen"
-                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#b9f574] px-3.5 text-xs font-semibold text-[#18251d] shadow-[0_4px_18px_rgba(185,245,116,.12)] transition hover:bg-[#caff91] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="primary-action inline-flex h-9 items-center gap-2 rounded-lg bg-[#b9f574] px-3.5 text-xs font-semibold text-[#18251d] shadow-[0_4px_18px_rgba(185,245,116,.12)] transition hover:bg-[#caff91] disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <Icon name="download" className="h-4 w-4" />
                     📊 Steuer-Export Excel (.xlsx)
