@@ -547,7 +547,7 @@ export default function Home() {
       <div className="mx-auto flex min-h-screen max-w-[1680px]">
         <aside className="dashboard-sidebar hidden w-[226px] shrink-0 border-r border-[#2b3850] bg-[#141d2d]/80 px-4 py-6 lg:flex lg:flex-col">
           <div className="flex items-center gap-3 px-2">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#b9f574] text-[#1c2a23]">
+            <div className="brand-mark grid h-10 w-10 place-items-center rounded-xl bg-[#b9f574] text-[#1c2a23]">
               <span className="text-xl font-black">₳</span>
             </div>
             <div>
