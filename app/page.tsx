@@ -399,7 +399,7 @@ function RewardBars({ rewards }: { rewards: Reward[] }) {
             Epoche {bar.epoch}: {adaFormat.format(bar.ada)} ADA
           </span>
           <div
-            className="w-full max-w-8 rounded-t-sm border-t border-[#d5ff9e] bg-gradient-to-t from-[#6a9b47] to-[#b9f574] opacity-80 transition-opacity group-hover:opacity-100"
+            className="reward-bar w-full max-w-8 rounded-t-sm border-t opacity-80 transition-opacity group-hover:opacity-100"
             style={{ height: `${bar.height}%` }}
           />
         </div>
