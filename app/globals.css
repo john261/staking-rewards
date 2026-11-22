@@ -8,8 +8,8 @@
   --line: #27344a;
   --muted: #a4b1c8;
   --text: #f2f5fc;
-  --lime: #b9f574;
-  --blue: #82b5ff;
+  --lime: #4aa3ff;
+  --blue: #8ac5ff;
 }
 
 html[data-theme="light"] {
@@ -319,6 +319,65 @@ html:not([data-theme]) .soft-grid {
     linear-gradient(rgba(111, 144, 191, .035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(111, 144, 191, .035) 1px, transparent 1px);
 }
+
+/* Replace the former lime-green accents with the same cool blue used by the
+   primary actions, while leaving the selectable light/ocean/violet themes intact. */
+html[data-theme="dark"] .brand-mark,
+html:not([data-theme]) .brand-mark {
+  color: #f5f9ff;
+  border: 1px solid rgba(151, 202, 255, .5);
+  background: linear-gradient(145deg, #56b2ff, #2375d1) !important;
+  box-shadow: 0 5px 20px rgba(35, 117, 209, .3), inset 0 1px rgba(255, 255, 255, .25);
+}
+
+html[data-theme="dark"] [class~="bg-[#b9f574]"],
+html:not([data-theme]) [class~="bg-[#b9f574]"] { background-color: #3b96f3 !important; }
+
+html[data-theme="dark"] [class~="bg-[#b9f574]/10"],
+html:not([data-theme]) [class~="bg-[#b9f574]/10"] { background-color: rgba(59, 150, 243, .1) !important; }
+
+html[data-theme="dark"] [class~="bg-[#b9f574]/15"],
+html:not([data-theme]) [class~="bg-[#b9f574]/15"] { background-color: rgba(59, 150, 243, .15) !important; }
+
+html[data-theme="dark"] [class~="text-[#b9f574]"],
+html:not([data-theme]) [class~="text-[#b9f574]"] { color: #65b6ff !important; }
+
+html[data-theme="dark"] [class~="text-[#a6b893]"],
+html:not([data-theme]) [class~="text-[#a6b893]"] { color: #9db5cf !important; }
+
+html[data-theme="dark"] [class~="bg-[#1d2b34]"],
+html:not([data-theme]) [class~="bg-[#1d2b34]"] { background-color: #14253a !important; }
+
+html[data-theme="dark"] [class~="bg-[#213629]/70"],
+html:not([data-theme]) [class~="bg-[#213629]/70"] { background-color: rgba(29, 82, 132, .24) !important; }
+
+html[data-theme="dark"] [class~="text-[#d8f6b4]"],
+html:not([data-theme]) [class~="text-[#d8f6b4]"],
+html[data-theme="dark"] [class~="text-[#c8f59a]"],
+html:not([data-theme]) [class~="text-[#c8f59a]"],
+html[data-theme="dark"] [class~="text-[#c7edaa]"],
+html:not([data-theme]) [class~="text-[#c7edaa]"],
+html[data-theme="dark"] [class~="text-[#d5ff9e]"],
+html:not([data-theme]) [class~="text-[#d5ff9e]"] { color: #a8d5ff !important; }
+
+html[data-theme="dark"] [class~="border-[#526248]"],
+html:not([data-theme]) [class~="border-[#526248]"],
+html[data-theme="dark"] [class~="border-[#9bd964]/50"],
+html:not([data-theme]) [class~="border-[#9bd964]/50"],
+html[data-theme="dark"] [class~="border-[#d5ff9e]"],
+html:not([data-theme]) [class~="border-[#d5ff9e]"] { border-color: rgba(101, 182, 255, .55) !important; }
+
+html[data-theme="dark"] [class~="from-[#6a9b47]"],
+html:not([data-theme]) [class~="from-[#6a9b47]"] { --tw-gradient-from: #2468b5 var(--tw-gradient-from-position) !important; }
+
+html[data-theme="dark"] [class~="to-[#b9f574]"],
+html:not([data-theme]) [class~="to-[#b9f574]"] { --tw-gradient-to: #64b5ff var(--tw-gradient-to-position) !important; }
+
+html[data-theme="dark"] [class~="focus:border-[#b9f574]"]:focus,
+html:not([data-theme]) [class~="focus:border-[#b9f574]"]:focus { border-color: #65b6ff !important; }
+
+html[data-theme="dark"] [class~="shadow-[0_0_10px_#b9f574]"],
+html:not([data-theme]) [class~="shadow-[0_0_10px_#b9f574]"] { --tw-shadow: 0 0 10px #65b6ff !important; }
 
 @media (max-width: 1023px) {
   html[data-theme="dark"] .dashboard-shell,
