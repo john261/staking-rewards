@@ -2,10 +2,10 @@
 
 :root {
   color-scheme: dark;
-  --page: #111827;
-  --surface: #192235;
-  --surface-raised: #202b41;
-  --line: #334158;
+  --page: #080d17;
+  --surface: #101827;
+  --surface-raised: #141f31;
+  --line: #27344a;
   --muted: #a4b1c8;
   --text: #f2f5fc;
   --lime: #b9f574;
@@ -35,7 +35,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(ellipse at 78% -18%, rgba(60, 91, 143, .18), transparent 40%),
+    radial-gradient(ellipse at 82% -10%, rgba(37, 91, 172, .16), transparent 38%),
+    radial-gradient(ellipse at 8% 84%, rgba(26, 75, 141, .08), transparent 32%),
     var(--page);
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -205,6 +206,126 @@ button { cursor: pointer; }
 .table-scroll::-webkit-scrollbar { height: 8px; }
 .table-scroll::-webkit-scrollbar-track { background: #1a2437; }
 .table-scroll::-webkit-scrollbar-thumb { background: #54647f; border-radius: 99px; }
+
+/* Deep navy, restrained blue highlights, and faint circuit detail from the
+   supplied visual reference. These rules affect presentation only. */
+html[data-theme="dark"] body,
+html:not([data-theme]) body {
+  background:
+    radial-gradient(ellipse at 82% -10%, rgba(37, 91, 172, .16), transparent 38%),
+    radial-gradient(ellipse at 8% 84%, rgba(26, 75, 141, .08), transparent 32%),
+    #080d17;
+}
+
+html[data-theme="dark"] .dashboard-shell,
+html:not([data-theme]) .dashboard-shell {
+  background: linear-gradient(115deg, rgba(8, 13, 23, .98), rgba(10, 17, 30, .92));
+}
+
+html[data-theme="dark"] .dashboard-sidebar,
+html:not([data-theme]) .dashboard-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: rgba(9, 15, 26, .94);
+  border-color: rgba(113, 139, 180, .15);
+  box-shadow: 18px 0 42px rgba(0, 0, 0, .12);
+}
+
+html[data-theme="dark"] .dashboard-header,
+html:not([data-theme]) .dashboard-header {
+  border-color: rgba(113, 139, 180, .17);
+}
+
+html[data-theme="dark"] .balance-panel,
+html:not([data-theme]) .balance-panel {
+  isolation: isolate;
+  border-color: rgba(90, 135, 199, .34);
+  background:
+    radial-gradient(ellipse at 79% 36%, rgba(35, 113, 211, .15), transparent 34%),
+    linear-gradient(135deg, #111a2a, #0d1625 72%);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, .2), inset 0 1px rgba(185, 207, 239, .035);
+}
+
+html[data-theme="dark"] .balance-panel::before,
+html:not([data-theme]) .balance-panel::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: .42;
+  background-image:
+    radial-gradient(circle at 86% 48%, transparent 0 39px, rgba(72, 140, 226, .24) 40px 41px, transparent 42px 58px, rgba(72, 140, 226, .13) 59px 60px, transparent 61px),
+    radial-gradient(circle, rgba(92, 153, 229, .72) 1px, transparent 1.8px),
+    linear-gradient(135deg, transparent 0 72%, rgba(57, 112, 184, .13) 72.1% 72.3%, transparent 72.4%),
+    linear-gradient(45deg, transparent 0 83%, rgba(57, 112, 184, .12) 83.1% 83.3%, transparent 83.4%);
+  background-size: auto, 18px 18px, auto, auto;
+  background-position: center, right 18px top 8px, center, center;
+  mask-image: linear-gradient(90deg, transparent 36%, #000 100%);
+}
+
+html[data-theme="dark"] .balance-panel > .relative,
+html:not([data-theme]) .balance-panel > .relative {
+  z-index: 1;
+}
+
+html[data-theme="dark"] .next-reward-panel,
+html:not([data-theme]) .next-reward-panel {
+  border-color: rgba(90, 135, 199, .3);
+  background:
+    radial-gradient(ellipse at 88% 0%, rgba(48, 129, 226, .18), transparent 43%),
+    linear-gradient(145deg, #111b2c, #0f1827);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, .17), inset 0 1px rgba(185, 207, 239, .035);
+}
+
+html[data-theme="dark"] .stat-card,
+html:not([data-theme]) .stat-card {
+  border-color: rgba(113, 139, 180, .2);
+  background: linear-gradient(145deg, rgba(17, 26, 42, .96), rgba(13, 21, 34, .98));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .13), inset 0 1px rgba(185, 207, 239, .025);
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+html[data-theme="dark"] .stat-card:hover,
+html:not([data-theme]) .stat-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(74, 139, 222, .44);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .2), 0 0 24px rgba(44, 111, 197, .06);
+}
+
+html[data-theme="dark"] .rewards-panel,
+html:not([data-theme]) .rewards-panel {
+  border-color: rgba(113, 139, 180, .2);
+  background: linear-gradient(150deg, rgba(15, 23, 37, .98), rgba(11, 18, 30, .99));
+  box-shadow: 0 18px 52px rgba(0, 0, 0, .2), inset 0 1px rgba(185, 207, 239, .025);
+}
+
+html[data-theme="dark"] .primary-action,
+html:not([data-theme]) .primary-action {
+  background-color: #338df0 !important;
+  color: #fff !important;
+  box-shadow: 0 5px 18px rgba(51, 141, 240, .2);
+}
+
+html[data-theme="dark"] .primary-action:hover,
+html:not([data-theme]) .primary-action:hover {
+  background-color: #56a4ff !important;
+}
+
+html[data-theme="dark"] .soft-grid,
+html:not([data-theme]) .soft-grid {
+  background-image:
+    linear-gradient(rgba(111, 144, 191, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(111, 144, 191, .035) 1px, transparent 1px);
+}
+
+@media (max-width: 1023px) {
+  html[data-theme="dark"] .dashboard-shell,
+  html:not([data-theme]) .dashboard-shell {
+    background: transparent;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
